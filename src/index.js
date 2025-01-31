@@ -1,12 +1,20 @@
 const dotenv = require('dotenv');
 const express = require('express');
+const cors = require('cors');
 
 const router = require('./routes/api/v1/index');
 const connectDB = require('./db/mongoDB');
 
 const app = express();
-dotenv.config();
 
+const corsOptions = {
+    origin: 'http://localhost:3000',
+    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
+
+dotenv.config();
+app.use(cors(corsOptions));
+app.use( '/public' ,express.static('public'));
 connectDB();
 app.use(express.json());
 
