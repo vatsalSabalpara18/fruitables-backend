@@ -4,13 +4,15 @@ const { subCategoryController } = require('../../../controllers');
 const upload = require('../../../middleware/upload');
 
 const router = express.Router();
-const { getSubcategories, addSubcategory, updateSubcategory, deleteSubcategory } = subCategoryController
+const { listCategories ,getSubcategories, addSubcategory, updateSubcategory, deleteSubcategory } = subCategoryController
 
-router.get("/get-subcategories", getSubcategories)
+router.get("/list-subcategories", listCategories);
+
+router.get("/get-subcategories/:cat_Id", getSubcategories);
 
 router.post("/add-subcategory", upload.single('sub_cat_img') ,addSubcategory)
 
-router.put("/update-subcategory/:id", updateSubcategory)
+router.put("/update-subcategory/:id", upload.single('sub_cat_img') , updateSubcategory)
 
 router.delete("/delete-subcategory/:id", deleteSubcategory)
 

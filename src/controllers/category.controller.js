@@ -128,9 +128,7 @@ const deleteCategory = async (req, res) => {
                 data: null,
                 message: "Error during the delete category."
             })
-        }
-
-        console.log("cateImg", category);
+        }        
 
         fs.unlink(category.cat_img, (err) => {
             if(err) {
