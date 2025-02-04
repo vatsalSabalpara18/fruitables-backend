@@ -7,7 +7,12 @@ const productSchema = new Schema({
         unique: true,
         trim: true
     },
-    sub_category_id: {
+    category: {
+        type: Types.ObjectId,
+        ref: 'Categories',
+        required: true,
+    },
+    sub_category: {
         type: Types.ObjectId,
         ref: 'SubCategories',
         required: true,

@@ -1,3 +1,4 @@
+const fs = require('fs');
 const Products = require("../model/product.model");
 
 const listProducts = async (req, res) => {
@@ -38,7 +39,7 @@ const getProduct = async (req, res) => {
         }
         return res.status(200).json({
             success: true,
-            data: products,
+            data: product,
             message: "Product get successfully."
         })
 
@@ -78,7 +79,27 @@ const addProduct = async (req, res) => {
 
 const updateProduct = async (req, res) => {
     try {
-        const product = await Products.findByIdAndUpdate(req.params.id, req.body, {new: true});
+        let modifiedBody;
+        if(req.file){
+            const oldProduct = await Products.findById(req.params.id);            
+
+            if (oldProduct?.product_img){
+                fs.unlinkSync(oldProduct?.product_img, (err) => {
+                    if (err) {
+                        return res.status(400).json({
+                            success: false,
+                            data: null,
+                            message: "Error during the delete old product image."
+                        })
+                    }
+                }) 
+            }
+
+            modifiedBody = { ...req.body, product_img: req.file.path};
+        } else {
+            modifiedBody = { ...req.body }
+        }
+        const product = await Products.findByIdAndUpdate(req.params.id, modifiedBody, { new: true, runValidators: true});
         if (!product) {
             return res.status(400).json({
                 success: false,
@@ -111,6 +132,18 @@ const deleteProduct = async (req, res) => {
                 message: "Error during the delete product."
             })
         }
+
+    
+        fs.unlinkSync(product.product_img, (err) => {
+            if(err) {
+                return res.status(400).json({
+                    success: false,
+                    data: null,
+                    message: "Error during the delete product image."
+                })
+            }
+        })        
+
         return res.status(200).json({
             success: true,
             data: product,
