@@ -27,6 +27,55 @@ const listCategories = async (req, res) => {
     }
 }
 
+const listCategoryName = async (req, res) => {
+    try {
+        const result = await SubCategories.aggregate(
+            [
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "category",
+                        foreignField: "_id",
+                        as: "categoryName",
+                        pipeline: [
+                            {
+                                $project: {
+                                    name: 1
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    $project: {
+                        name: 1,
+                        category: 1,
+                        categoryName: { $first: "$categoryName.name" }
+                    }
+                }
+            ]
+        )
+        if (!result){
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result is empty"
+            })
+        }
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "result get successfully."
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            data: null,
+            message: "internal server error: " + error.message
+        })
+    }
+}
+
 const getSubcategories = async (req, res) => {
     try {
         const subCategories = await SubCategories.find({ category: req.params.cat_Id }).exec();
@@ -164,6 +213,7 @@ const deleteSubcategory = async (req, res) => {
 
 module.exports = {
     listCategories,
+    listCategoryName,
     getSubcategories,
     addSubcategory,
     updateSubcategory,

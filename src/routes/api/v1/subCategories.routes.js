@@ -4,9 +4,11 @@ const { subCategoryController } = require('../../../controllers');
 const upload = require('../../../middleware/upload');
 
 const router = express.Router();
-const { listCategories ,getSubcategories, addSubcategory, updateSubcategory, deleteSubcategory } = subCategoryController
+const { listCategories, listCategoryName ,getSubcategories, addSubcategory, updateSubcategory, deleteSubcategory } = subCategoryController
 
 router.get("/list-subcategories", listCategories);
+
+router.get("/list-category-name", listCategoryName);
 
 router.get("/get-subcategories/:cat_Id", getSubcategories);
 

@@ -25,6 +25,37 @@ const listCategories = async (req, res) => {
         })
     }
 }
+
+const getTotalCategory = async (req, res) => {
+    try {
+        const result = await Categories.aggregate(
+            [
+                {
+                    $count: 'no of categories'
+                }
+            ]
+        )
+        if(!res) {
+            return res.status(400).json({
+                sucess: false,
+                data: [],
+                message: "no of categoies not found."
+            })
+        }
+        return res.status(200).json({
+            sucess: true,
+            data: result,
+            message: "found no. of categories."
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server error:" + error.message
+        })
+    }
+}
+
 const getCategory = async (req, res) => {
     try {
         const category = await Categories.findById(req.params.id);
@@ -157,6 +188,7 @@ const deleteCategory = async (req, res) => {
 module.exports = {
     listCategories,
     getCategory,
+    getTotalCategory,
     addCategory,
     updateCategory,
     deleteCategory

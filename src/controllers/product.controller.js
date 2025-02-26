@@ -26,6 +26,120 @@ const listProducts = async (req, res) => {
     }
 }
 
+const listProductsWithSubCat = async(req, res) => {
+    try {
+        const result = await Products.aggregate(
+            [
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "category",
+                        foreignField: "_id",
+                        as: "categoryName",
+                        pipeline: [
+                            {
+                                $project: {
+                                    name: 1
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "subcategories",
+                        localField: "sub_category",
+                        foreignField: "_id",
+                        as: "sub_categoryName",
+                        pipeline: [
+                            {
+                                $project: {
+                                    name: 1
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    $project: {
+                        name: 1,
+                        categoryName: { $first: "$categoryName.name" },
+                        sub_categoryName: { $first: "$sub_categoryName.name" }
+                    }
+                }
+            ]
+        )
+        if(!result){
+            return res.status(400).json({
+                success: false,
+                data: null,
+                message: "result is empty."
+            })
+        }
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "result is get successfully."
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server error:" + error.message
+        })
+    }
+}
+
+const listProductsCategoryWise = async (req, res) => {
+    try {
+        const result = await Products.aggregate(
+            [
+                {
+                    $group: {
+                        _id: "$category",
+                        no_products: { $sum: 1 }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "_id",
+                        foreignField: "_id",
+                        as: "categoryName"
+                    }
+                },
+                {
+                    $project: {
+                        cat_id: "$_id",
+                        categoryName: { $arrayElemAt: ["$categoryName.name", 0] },
+                        no_products: 1,
+                        _id: 0
+                    }
+                }
+            ]
+
+        )
+        if(!result){
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "the result is empty."
+            })
+        }
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "result is get successfully."
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server error:" + error.message
+        })
+    }
+}
+
 const getProduct = async (req, res) => {
     try {
         const product = await Products.findById(req.params.id);
@@ -161,6 +275,8 @@ const deleteProduct = async (req, res) => {
 
 module.exports = {
     listProducts,
+    listProductsWithSubCat,
+    listProductsCategoryWise,
     getProduct,
     addProduct,
     updateProduct,
