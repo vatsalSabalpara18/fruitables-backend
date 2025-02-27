@@ -1,5 +1,8 @@
 const fs = require('fs');
 const Categories = require("../model/category.model");
+const Products = require('../model/product.model');
+const SubCategories = require('../model/subCategory.model');
+const { default: mongoose } = require('mongoose');
 
 const listCategories = async (req, res) => {
     try {
@@ -72,6 +75,334 @@ const getCategory = async (req, res) => {
             data: category,
             message: "category get successfully."
         })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server error:" + error.message
+        })
+    }
+}
+
+const getCountActive = async (req, res) => {
+    try {
+        
+        const result = await Categories.aggregate(
+            [
+                {
+                    $match: {
+                        isActive: true
+                    }
+                },
+                {
+                    $count: 'No of Active Categories'
+                }
+            ]
+        );
+
+        if(!result){
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result get empty."
+            }) 
+        }
+
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "get result successfully."
+        })
+        
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server error:" + error.message
+        })
+    }
+}
+
+const getMostProducts = async (req, res) => {
+    try {
+
+        const result = await Products.aggregate(
+            [
+                {
+                    $group: {
+                        _id: "$category",
+                        No_of_products: {
+                            $sum: 1
+                        }
+                    }
+                },
+                {
+                    $sort: {
+                        No_of_products: -1
+                    }
+                },
+                {
+                    $limit: 1
+                },
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "_id",
+                        foreignField: "_id",
+                        as: "categoryName",
+                        pipeline: [
+                            {
+                                $project: {
+                                    name: 1,
+                                    _id: 0
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    $project: {
+                        No_of_products: 1,
+                        categoryName: { $first: "$categoryName.name" }
+                    }
+                }
+            ]
+        );
+
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result get empty."
+            })
+        }
+
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "get result successfully."
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server error:" + error.message
+        })
+    }
+}
+
+const getAverageProducts = async (req, res) => {
+    try {
+
+        const total_product = await Products.countDocuments({});
+        const result = await Products.aggregate(
+            [
+                {
+                    $group: {
+                        _id: "$category",
+                        No_of_products: {
+                            $sum: 1
+                        }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "_id",
+                        foreignField: "_id",
+                        as: "categoryName",
+                        pipeline: [
+                            {
+                                $project: {
+                                    name: 1,
+                                    _id: 0
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    $project: {
+                        No_of_products: 1,
+                        categoryName: { $first: "$categoryName.name" }
+                    }
+                }
+            ]
+        );
+
+        const new_res = result.map((item) => {
+            const percentage =  +((item.No_of_products / total_product ) * 100).toFixed(2)
+            return {
+                ...item,
+                percentage
+            }
+        })
+
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result get empty."
+            })
+        }
+
+        res.status(200).json({
+            success: true,
+            data: new_res,
+            message: "get result successfully."
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server error:" + error.message
+        })
+    }
+}
+
+const getInActiveCategories = async (req, res) => {
+    try {
+
+        const result = await Categories.aggregate(
+            [
+                {
+                    $match: {
+                        isActive: false
+                    }
+                }
+            ]
+        );
+
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result get empty."
+            })
+        }
+
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "get result successfully."
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server error:" + error.message
+        })
+    }
+}
+
+const getCountOfSubcategoriesByEachCategories = async (req, res) => {
+    try {
+
+        const result = await SubCategories.aggregate(
+            [
+                {
+                    $group: {
+                        _id: "$category",
+                        no_of_subcategory: {
+                            $sum: 1
+                        }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "categories",
+                        localField: "_id",
+                        foreignField: "_id",
+                        as: "categoryName",
+                        pipeline: [
+                            {
+                                $project: {
+                                    name: 1
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    $project: {
+                        no_of_subcategory: 1,
+                        categoryName: {
+                            $first: "$categoryName.name"
+                        }
+                    }
+                }
+            ]
+        );
+
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result get empty."
+            })
+        }
+
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "get result successfully."
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server error:" + error.message
+        })
+    }
+}
+
+const getSubCatgoriesByCategory = async (req, res) => {
+    try {
+        const result = await Categories.aggregate(
+            [
+                {
+                    $match: {
+                        _id: new mongoose.Types.ObjectId(req?.params?.category_id || "")
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "subcategories",
+                        localField: "_id",
+                        foreignField: "category",
+                        as: "subcategories",
+                        pipeline: [
+                            {
+                                $project: {
+                                    name: 1,
+                                    subCat_id: "$_id",
+                                    _id: 0
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        );
+
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result get empty."
+            })
+        }
+
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "get result successfully."
+        })
+
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -188,7 +519,13 @@ const deleteCategory = async (req, res) => {
 module.exports = {
     listCategories,
     getCategory,
+    getCountActive,
     getTotalCategory,
+    getMostProducts,
+    getAverageProducts,
+    getInActiveCategories,
+    getCountOfSubcategoriesByEachCategories,
+    getSubCatgoriesByCategory,
     addCategory,
     updateCategory,
     deleteCategory
