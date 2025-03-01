@@ -1,5 +1,6 @@
 const fs = require('fs');
 const SubCategories = require("../model/subCategory.model");
+const Products = require('../model/product.model');
 
 const listCategories = async (req, res) => {
     try {
@@ -97,6 +98,199 @@ const getSubcategories = async (req, res) => {
             success: false,
             data: null,
             message: "Internal server Error: "+ error.message
+        })
+    }
+}
+
+const getCountActiveSubCategories = async (req, res) => {
+    try {
+        const result = await SubCategories.aggregate(
+            [
+                {
+                    $match: {
+                        isActive: true
+                    }
+                },
+                {
+                    $count: 'NoOfActiveSubCategories'
+                }
+            ]
+        )
+        if(!result){
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result get empty."
+            })
+        }
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "result get successfully."
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server Error: " + error.message
+        }) 
+    }
+}
+
+const listInActiveSubCategories = async (req, res) => {
+    try {
+        const result = await SubCategories.aggregate(
+            [
+                {
+                    $match: {
+                        isActive: false
+                    }
+                }
+            ]
+        )
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result get empty."
+            })
+        }
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "result get successfully."
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server Error: " + error.message
+        })
+    }
+}
+
+const getSubCategoryWithTotalProducts = async (req, res) => {
+    try {
+        const result = await Products.aggregate(
+            [
+                {
+                    $group: {
+                        _id: "$sub_category",
+                        no_of_products: {
+                            $sum: 1
+                        }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "subcategories",
+                        localField: "_id",
+                        foreignField: "_id",
+                        as: "sub_categoryName",
+                        pipeline: [
+                            {
+                                $project: {
+                                    name: 1,
+                                    _id: 0
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    $project: {
+                        no_of_products: 1,
+                        sub_categoryName: { $first: "$sub_categoryName.name" }
+                    }
+                }
+            ]
+        )
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result get empty."
+            })
+        }
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "result get successfully."
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server Error: " + error.message
+        })
+    }
+}
+
+const getSubCategoryWithMostProducts = async (req, res) => {
+    try {
+        const result = await Products.aggregate(
+            [
+                {
+                    $group: {
+                        _id: "$sub_category",
+                        no_of_products: {
+                            $sum: 1
+                        }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "subcategories",
+                        localField: "_id",
+                        foreignField: "_id",
+                        as: "sub_categoryName",
+                        pipeline: [
+                            {
+                                $project: {
+                                    name: 1,
+                                    _id: 0
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    $project: {
+                        no_of_products: 1,
+                        sub_categoryName: { $first: "$sub_categoryName.name" }
+                    }
+                },
+                {
+                    $sort: {
+                        no_of_products: -1
+                    }
+                }
+            ]
+        )
+        const max_no_of_products = result.reduce((acc, item) => {            
+            if (item?.no_of_products > acc){
+                acc = item?.no_of_products                
+            }
+            return acc;
+        }, 0)
+        
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result get empty."
+            })
+        }
+        res.status(200).json({
+            success: true,
+            data: result.filter((item) => item?.no_of_products === max_no_of_products),
+            message: "result get successfully."
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server Error: " + error.message
         })
     }
 }
@@ -214,7 +408,11 @@ const deleteSubcategory = async (req, res) => {
 module.exports = {
     listCategories,
     listCategoryName,
+    listInActiveSubCategories,
+    getSubCategoryWithTotalProducts,
+    getSubCategoryWithMostProducts,
     getSubcategories,
+    getCountActiveSubCategories,
     addSubcategory,
     updateSubcategory,
     deleteSubcategory
