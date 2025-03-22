@@ -20,6 +20,10 @@ const subCategorySchema = new Schema({
     sub_cat_img: {
         type: String,
         required: true
+    },
+    isActive: {
+        type: Boolean,
+        required: true
     }
 }, {
     timestamps: true,

@@ -15,6 +15,10 @@ const categorySchema = new Schema({
     cat_img: {
         type: String,
         required: true
+    },
+    isActive: {
+        type: Boolean,
+        required: true
     }
 },{
     timestamps: true,

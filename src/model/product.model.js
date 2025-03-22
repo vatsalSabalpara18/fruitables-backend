@@ -29,6 +29,10 @@ const productSchema = new Schema({
     product_img: {
         type: String,
         required: true
+    },
+    isActive: {
+        type: Boolean,
+        required: true
     }
 }, {
     timestamps: true,

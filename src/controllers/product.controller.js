@@ -1,5 +1,7 @@
 const fs = require('fs');
 const Products = require("../model/product.model");
+const mongoose = require('mongoose');
+const { query } = require('express');
 
 const listProducts = async (req, res) => {
     try {
@@ -26,7 +28,7 @@ const listProducts = async (req, res) => {
     }
 }
 
-const listProductsWithSubCat = async(req, res) => {
+const listProductsWithSubCat = async (req, res) => {
     try {
         const result = await Products.aggregate(
             [
@@ -69,7 +71,7 @@ const listProductsWithSubCat = async(req, res) => {
                 }
             ]
         )
-        if(!result){
+        if (!result) {
             return res.status(400).json({
                 success: false,
                 data: null,
@@ -119,7 +121,7 @@ const listProductsCategoryWise = async (req, res) => {
             ]
 
         )
-        if(!result){
+        if (!result) {
             return res.status(400).json({
                 success: false,
                 data: [],
@@ -166,11 +168,249 @@ const getProduct = async (req, res) => {
     }
 }
 
+const getProdcutsByName = async (req, res) => {
+    try {        
+        const { name } = req.params;
+
+        const result = await Products.find({ name: { $regex: new RegExp(name, "i") } });
+
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result is empty."
+            })
+        }
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "result get successfullly."
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server error:" + error.message
+        })
+    }
+}
+
+const getProductBySearch = async (req, res) => {
+    try {        
+        const matchObj = {};
+        const {category, max, min, rating, sortOrder, page, limit} = req.query
+        if(category){
+            matchObj["category_id"] = parseInt(category);
+        }
+        if(max || min) {
+            matchObj["variants.price"] = {}
+        }        
+        if(max){
+            matchObj["variants.price"]["$lte"] = parseFloat(max)
+        }
+        if(min){
+            matchObj["variants.price"]["$gte"] = parseFloat(min)
+        }
+        if(rating){
+            matchObj["avgProductRating"] = { $gte: parseFloat(rating) }
+        }        
+                
+        // {
+        //     category_id: 1,
+        //         avgProductRating: { $gt: 4 },
+        //     "variants.price": { $gt: 1000 },
+        //     "variants.price": { $lt: 2000 }
+        // }
+        const pipeline = [
+            {
+                $lookup: {
+                    from: "review",
+                    localField: "_id",
+                    foreignField: "product_id",
+                    as: "reviews"
+                }
+            },
+            {
+                $lookup: {
+                    from: "variant",
+                    localField: "_id",
+                    foreignField: "product_id",
+                    as: "variants"
+                }
+            },
+            {
+                $unwind: "$reviews"
+            },
+            {
+                $unwind: "$variants"
+            },
+            {
+                $group: {
+                    _id: "$_id",
+                    avgProductRating: {
+                        $avg: "$reviews.rating"
+                    },
+                    name: { $first: "$name" },
+                    category_id: { $first: "$category_id" },
+                    description: { $first: "$description" },
+                    variants: {
+                        $push: {
+                            price: "$variants.attributes.Price"
+                        }
+                    }
+                }
+            },
+            {
+                $match: matchObj
+            },
+            {
+                $sort: {
+                    "name": parseInt(sortOrder)
+                }
+            }
+        ];
+        if(page && limit){
+            pipeline.push({
+                "$skip": (parseInt(page) - 1) * parseInt(limit)
+            })
+            pipeline.push({
+                "$limit": parseInt(limit)
+            })
+        }
+        const result = await Products.aggregate(
+            pipeline
+        )
+        if (!result || !result.length){
+           return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result is get empty."
+            })
+        }
+       return res.status(200).json({
+            success: true,
+            data: result,
+            message: "result get successfully."
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server error:" + error.message
+        })
+    }
+}
+
+const listProductsByCategory = async (req, res) => {
+    try {
+        const { category_id } = req.params;
+
+        const result = await Products.find({ category: category_id});
+
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result is empty."
+            })
+        }
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "result get successfullly."
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server error:" + error.message
+        })
+    }
+}
+const listProductsBySubCategory = async (req, res) => {
+    try {
+        const { subcategory_id } = req.params;
+
+        const result = await Products.find({ sub_category: subcategory_id });
+
+        if (!result) {
+            return res.status(400).json({
+                success: false,
+                data: [],
+                message: "result is empty."
+            })
+        }
+        res.status(200).json({
+            success: true,
+            data: result,
+            message: "result get successfullly."
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            data: null,
+            message: "Internal server error:" + error.message
+        })
+    }
+}
+
+const getVariantDetails = async (req, res) => {
+    try {
+
+        const { product_id } = req.params;
+
+        const result = await Products.aggregate(
+            [
+                {
+                    $match: {
+                        _id: new mongoose.Types.ObjectId(product_id)
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "variants",
+                        localField: "_id",
+                        foreignField: "product_id",
+                        as: "variants"
+                    }
+                },
+                {
+                    $unwind: "$variants"
+                }
+            ]
+        )
+
+        if(!result){
+            return res.status(400).json({
+                success: true,
+                data: result,
+                message: "result get empty."
+            })
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: result,
+            message: "result get sucessfully."
+        })
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            data: null,
+            message: "Intrenal Server Error " + error
+        })
+    }
+}
+
 const addProduct = async (req, res) => {
     try {
-        const product = await Products.create({...req.body, product_img: req.file.path});
+        const product = await Products.create({ ...req.body, product_img: req.file.path });
 
-        if(!product){
+        if (!product) {
             return res.status(400).json({
                 success: false,
                 data: null,
@@ -182,7 +422,7 @@ const addProduct = async (req, res) => {
             data: product,
             message: "Your Product is successfully created."
         })
-    } catch (error) {        
+    } catch (error) {
         res.status(500).json({
             success: false,
             data: null,
@@ -194,10 +434,10 @@ const addProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
     try {
         let modifiedBody;
-        if(req.file){
-            const oldProduct = await Products.findById(req.params.id);            
+        if (req.file) {
+            const oldProduct = await Products.findById(req.params.id);
 
-            if (oldProduct?.product_img){
+            if (oldProduct?.product_img) {
                 fs.unlinkSync(oldProduct?.product_img, (err) => {
                     if (err) {
                         return res.status(400).json({
@@ -206,14 +446,14 @@ const updateProduct = async (req, res) => {
                             message: "Error during the delete old product image."
                         })
                     }
-                }) 
+                })
             }
 
-            modifiedBody = { ...req.body, product_img: req.file.path};
+            modifiedBody = { ...req.body, product_img: req.file.path };
         } else {
             modifiedBody = { ...req.body }
         }
-        const product = await Products.findByIdAndUpdate(req.params.id, modifiedBody, { new: true, runValidators: true});
+        const product = await Products.findByIdAndUpdate(req.params.id, modifiedBody, { new: true, runValidators: true });
         if (!product) {
             return res.status(400).json({
                 success: false,
@@ -238,7 +478,7 @@ const updateProduct = async (req, res) => {
 const deleteProduct = async (req, res) => {
     try {
         const product = await Products.findByIdAndDelete(req.params.id);
-       
+
         if (!product) {
             return res.status(400).json({
                 success: false,
@@ -247,16 +487,16 @@ const deleteProduct = async (req, res) => {
             })
         }
 
-    
+
         fs.unlinkSync(product.product_img, (err) => {
-            if(err) {
+            if (err) {
                 return res.status(400).json({
                     success: false,
                     data: null,
                     message: "Error during the delete product image."
                 })
             }
-        })        
+        })
 
         return res.status(200).json({
             success: true,
@@ -277,7 +517,12 @@ module.exports = {
     listProducts,
     listProductsWithSubCat,
     listProductsCategoryWise,
+    listProductsByCategory,
+    listProductsBySubCategory,
+    getVariantDetails,
+    getProductBySearch,
     getProduct,
+    getProdcutsByName,
     addProduct,
     updateProduct,
     deleteProduct
