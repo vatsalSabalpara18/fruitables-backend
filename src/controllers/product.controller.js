@@ -1,7 +1,6 @@
 const fs = require('fs');
 const Products = require("../model/product.model");
 const mongoose = require('mongoose');
-const { query } = require('express');
 
 const listProducts = async (req, res) => {
     try {

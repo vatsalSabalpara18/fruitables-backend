@@ -414,7 +414,7 @@ const getSubCatgoriesByCategory = async (req, res) => {
 
 const addCategory = async (req, res) => {
     try {
-        const category = await Categories.create({...req.body, cat_img: req.file.path});
+        const category = await Categories.create({...req.body, cat_img: req.file.path, isActive: true});
 
         if(!category){
             return res.status(400).json({

@@ -2,6 +2,7 @@ const express = require("express");
 
 const { categoryController } = require("../../../controllers");
 const upload = require("../../../middleware/upload");
+const auth = require("../../../middleware/auth");
 
 const router = express.Router();
 const {
@@ -35,11 +36,11 @@ router.get("/count-subcategories", getCountOfSubcategoriesByEachCategories);
 
 router.get("/category-subcategory/:category_id", getSubCatgoriesByCategory);
 
-router.post("/add-category", upload.single("cat_img"), addCategory);
+router.post("/add-category", auth(["admin", "user", "employee"]), upload.single("cat_img"), addCategory);
 
-router.put("/update-category/:id", upload.single("cat_img"), updateCategory);
+router.put("/update-category/:id", auth(["admin", "user", "employee"]), upload.single("cat_img"), updateCategory);
 
-router.delete("/delete-category/:id", deleteCategory);
+router.delete("/delete-category/:id", auth(["admin", "user", "employee"]), deleteCategory);
 
 router.get("/total-cat", getTotalCategory);
 
