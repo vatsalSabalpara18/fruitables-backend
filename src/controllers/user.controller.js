@@ -115,7 +115,7 @@ const userLogin = async (req, res) => {
 const generateNewToken = async (req, res) => {
     try {
 
-        const token = req.cookies.refreshToken || req.headers.authorization.replace("Bearer ", "");
+        const token = req.cookies.refreshToken || req.headers.authorization?.replace("Bearer ", "");        
         if (!token) {
             return res.status(404).json({
                 success: false,
@@ -214,16 +214,16 @@ const userLogout = async (req, res) => {
 
 const checkAuth = async (req, res) => {
     try {
-        const token = req.cookies.accessToken || req.headers.authorization.replace("Bearer ", "");
+        const token = req.cookies.accessToken || req.headers.authorization?.replace("Bearer ", "");
         if (!token) {
-            return res.status(404).json({
+            return res.status(401).json({
                 success: false,
                 message: "access token is not found"
             })
         }
         const decodedData = verifyToken(token, process.env.ACCESSTOKEN_SCERET_KEY);
         if (!decodedData) {
-            return res.status(400).json({
+            return res.status(401).json({
                 success: false,
                 data: null,
                 message: "invaild credential: token is expires/invaild."
