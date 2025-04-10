@@ -15,8 +15,10 @@ const userSchema = new Schema({
         required: true
     },
     password: {
-        type: String,
-        required: true
+        type: String        
+    },
+    googleId:{
+        type: String
     },
     refreshToken: {
         type: String        
