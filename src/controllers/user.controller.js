@@ -1,6 +1,8 @@
 const bcrypt = require('bcrypt');
 const Users = require("../model/user.model");
 const { genAccessToken, genRefreshToken, verifyToken } = require('../utils/token');
+const sendMail = require('../utils/nodemailer');
+const { sendOTP, createVerificationCheck } = require('../utils/twilio');
 
 const userRegister = async (req, res) => {
     try {
@@ -20,6 +22,12 @@ const userRegister = async (req, res) => {
             const hashPass = await bcrypt.hash(password, 10);
             const user = await Users.create({ ...req.body, password: hashPass });
             const userData = await Users.findById(user?._id).select("-password");
+
+            const otp = console.log(Math.floor(100000 + Math.random() * 900000));
+
+            sendOTP();
+
+            // sendMail(email, 'Verify your account with Fruitables', `your verifiacation otp is ${otp}`);
 
             return res.status(201).json({
                 success: true,
@@ -42,6 +50,27 @@ const userRegister = async (req, res) => {
             success: false,
             data: null,
             message: "Internal Server Error " + error.message
+        })
+    }
+}
+
+const verifyOTP = async (req, res) => {
+    try {
+        const { otp } = req.body;
+
+        const verifiacation =  await createVerificationCheck(otp);
+
+        return res.status(200).json({
+            success: true,
+            data: verifiacation,
+            message: 'verification OTP'
+        })
+
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error ' + error.message
         })
     }
 }
@@ -115,7 +144,7 @@ const userLogin = async (req, res) => {
 const generateNewToken = async (req, res) => {
     try {
 
-        const token = req.cookies.refreshToken || req.headers.authorization?.replace("Bearer ", "");        
+        const token = req.cookies.refreshToken || req.headers.authorization?.replace("Bearer ", "");
         if (!token) {
             return res.status(404).json({
                 success: false,
@@ -252,5 +281,6 @@ module.exports = {
     userLogin,
     userLogout,
     generateNewToken,
-    checkAuth
+    checkAuth,
+    verifyOTP
 }
