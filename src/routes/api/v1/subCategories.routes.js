@@ -1,25 +1,40 @@
-const express = require('express');
+const express = require("express");
+
+const { subCategoryController } = require("../../../controllers");
+const upload = require("../../../middleware/upload");
 
 const router = express.Router();
+const {
+  listCategories,
+  listCategoryName,
+  listInActiveSubCategories,
+  getSubcategories,
+  getCountActiveSubCategories,
+  getSubCategoryWithTotalProducts,
+  getSubCategoryWithMostProducts,
+  addSubcategory,
+  updateSubcategory,
+  deleteSubcategory,
+} = subCategoryController;
 
-router.get("/get-subcategories", (req, res) => {
-    res.send("GET Request");
-})
+router.get("/list-subcategories", listCategories);
 
-router.post("/add-subcategory", (req, res) => {
-    console.log(req.body);
-    res.send("POST Request");
-})
+router.get("/list-category-name", listCategoryName);
 
-router.put("/update-subcategory/:id", (req, res) => {
-    console.log(req.body);
-    console.log(req.params);
-    res.send("Update Request");
-})
+router.get("/get-subcategories/:cat_Id", getSubcategories);
 
-router.delete("/delete-subcategory/:id", (req, res) => {
-    console.log(req.body);
-    res.send("DELETE Request");
-})
+router.get("/count-active", getCountActiveSubCategories);
+
+router.get("/count-products", getSubCategoryWithTotalProducts);
+
+router.get("/most-products", getSubCategoryWithMostProducts);
+
+router.get("/inactive", listInActiveSubCategories);
+
+router.post("/add-subcategory", upload.single("sub_cat_img"), addSubcategory);
+
+router.put("/update-subcategory/:id", upload.single('sub_cat_img') , updateSubcategory)
+
+router.delete("/delete-subcategory/:id", deleteSubcategory);
 
 module.exports = router;
