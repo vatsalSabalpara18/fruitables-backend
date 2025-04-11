@@ -1,10 +1,10 @@
 const sendOTP = () => {
     try {
-        const accountSid = 'AC879ee8289b1cb53a9486b3bd4285d08e';
-        const authToken = 'f948a7e84a87cdf18ec80ac0c2cc6276';
+        const accountSid = process.env.TWILIO_ACCOUNT_SID;
+        const authToken = process.env.TWILIO_ACCOUNT_AUTH_TOKEN;
         const client = require('twilio')(accountSid, authToken);
 
-        client.verify.v2.services("VAc3ceadb9dd9b21fca4817add7fd4b46a")
+        client.verify.v2.services(process.env.TWILIO_ACCOUNT_SERVICE_SID)
             .verifications
             .create({ to: '+919724994299', channel: 'sms' })
             .then(verification => console.log(verification.sid))
@@ -16,11 +16,11 @@ const sendOTP = () => {
 
 async function createVerificationCheck(code) {
     try {
-        const accountSid = 'AC879ee8289b1cb53a9486b3bd4285d08e';
-        const authToken = 'f948a7e84a87cdf18ec80ac0c2cc6276';
+        const accountSid = process.env.TWILIO_ACCOUNT_SID;
+        const authToken = process.env.TWILIO_ACCOUNT_AUTH_TOKEN;
         const client = require('twilio')(accountSid, authToken);
         const verificationCheck = await client.verify.v2
-            .services("VAc3ceadb9dd9b21fca4817add7fd4b46a")
+            .services(process.env.TWILIO_ACCOUNT_SERVICE_SID)
             .verificationChecks.create({
                 code: code,
                 to: "+919724994299",
