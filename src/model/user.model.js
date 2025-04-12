@@ -20,6 +20,10 @@ const userSchema = new Schema({
     googleId:{
         type: String
     },
+    isVerified:{
+        type: Boolean,
+        default: false
+    },
     refreshToken: {
         type: String        
     }

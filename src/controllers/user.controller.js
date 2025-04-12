@@ -23,7 +23,7 @@ const userRegister = async (req, res) => {
             const user = await Users.create({ ...req.body, password: hashPass });
             const userData = await Users.findById(user?._id).select("-password");
 
-            const otp = console.log(Math.floor(100000 + Math.random() * 900000));
+            // const otp = Math.floor(100000 + Math.random() * 900000);
 
             sendOTP();
 
@@ -56,14 +56,22 @@ const userRegister = async (req, res) => {
 
 const verifyOTP = async (req, res) => {
     try {
-        const { otp } = req.body;
+        const { otp, email } = req.body;
 
-        const verifiacation =  await createVerificationCheck(otp);
+        const verifiacation = await createVerificationCheck(otp);
 
+        if (!verifiacation && verifiacation !== 'approved') {
+            return res.status.json({
+                success: false,
+                message: 'please enter correct otp.'
+            })
+        }
+
+        await Users.findOneAndUpdate({ email: email }, { isVerified: true }, { new: true })
+        
         return res.status(200).json({
-            success: true,
-            data: verifiacation,
-            message: 'verification OTP'
+            success: true,            
+            message: 'your otp verification is done please login.'
         })
 
 
@@ -86,6 +94,14 @@ const userLogin = async (req, res) => {
                 success: false,
                 data: null,
                 message: "User is not found."
+            })
+        }
+
+        if (!userData?.isVerified) {
+            return res.status(400).json({
+                success: false,
+                data: null,
+                message: "you are not verified, please verify your account with OTP."
             })
         }
 
