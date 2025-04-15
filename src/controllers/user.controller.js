@@ -3,6 +3,7 @@ const Users = require("../model/user.model");
 const { genAccessToken, genRefreshToken, verifyToken } = require('../utils/token');
 const sendMail = require('../utils/nodemailer');
 const { sendOTP, createVerificationCheck } = require('../utils/twilio');
+const createPDF = require('../utils/pdfMaker');
 
 const userRegister = async (req, res) => {
     try {
@@ -26,6 +27,58 @@ const userRegister = async (req, res) => {
             // const otp = Math.floor(100000 + Math.random() * 900000);
 
             sendOTP();
+
+
+            const docDefinition = {
+                content: [
+                    {
+                        image: 'public/fruitable.png',
+                        cover: { width: 200, height: 100, valign: "center", align: "center" },
+                        style: 'logo'
+                    },
+                    { text: 'User Tables', style: 'mainHeader' },
+                    {
+                        style: 'userTable',
+                        columns: [
+                            { width: '*', text: '' },
+                            {
+                                width: 'auto',
+                                table: {
+                                    body: [
+                                        ['Name', 'Email', 'Role'],
+                                        [`${user.name}`, `${user.email}`, `${user.role}`]
+                                    ]
+                                },                                
+                            },
+                            { width: '*', text: '' }
+                        ],                        
+                    },
+                    '               ',
+                    { text: `Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.`, style: 'paragraph' }
+                ],
+                styles: {
+                    mainHeader: {   
+                        fontSize: 18,
+                        bold: true,
+                        alignment: 'center',
+                        margin: [0, 0, 0, 10]
+                    },
+                    userTable: {
+                        width: 'auto',       
+                        margin: [0, 10, 0, 10],
+                        alignment: 'center'
+                    },
+                    logo: {
+                        alignment: 'center'
+                    },
+                    paragraph: {
+                        alignment: 'left',
+                        margin: [0, 10, 0, 10]
+                    }
+                }
+            }
+
+            await createPDF(docDefinition, user.name);
 
             // sendMail(email, 'Verify your account with Fruitables', `your verifiacation otp is ${otp}`);
 
