@@ -5,7 +5,7 @@ const passport = require('passport');
 const { genAccessToken, genRefreshToken } = require('../../../utils/token');
 const Users = require('../../../model/user.model');
 
-const { userRegister, userLogin, userLogout, generateNewToken, checkAuth, verifyOTP } = userController
+const { userRegister, userLogin, userLogout, generateNewToken, forgotPassword, resetPassword, checkAuth, verifyOTP } = userController
 
 const router = express.Router();
 
@@ -15,6 +15,8 @@ router.post('/logout', userLogout);
 router.post('/gen-new-token', generateNewToken);
 router.get('/check-auth', checkAuth);
 router.post('/verify-otp', verifyOTP);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 router.get('/google',
     passport.authenticate('google', { scope: ['profile', 'email'] }));
 
