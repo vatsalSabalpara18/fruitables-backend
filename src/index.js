@@ -7,6 +7,7 @@ const router = require('./routes/api/v1/index');
 const connectDB = require('./db/mongoDB');
 const passport = require('passport');
 const googleStrategy = require('./utils/googleStrategy');
+const connectSocket = require('./utils/socket.io');
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use(require('express-session')({ secret: process.env.EXPRESS_SESSION_SECRET_
 app.use(passport.initialize());
 app.use(passport.session());
 googleStrategy();
+connectSocket();
 
 app.use("/api/v1/", router);
 
