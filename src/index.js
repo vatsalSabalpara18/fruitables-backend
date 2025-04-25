@@ -37,7 +37,8 @@ app.get('/', (req, res) => {
 
 app.use("/api/v1/", router);
 
-app.listen(process.env.PORT, () => {
-    console.log(`Server is lisning at ${process.env.PORT}`)
-})
+// app.listen(process.env.PORT, () => {
+//     console.log(`Server is lisning at ${process.env.PORT}`)
+// })
 
+module.exports = app;
