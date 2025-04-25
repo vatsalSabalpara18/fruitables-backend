@@ -29,6 +29,12 @@ app.use(passport.session());
 googleStrategy();
 connectSocket();
 
+app.get('/', (req, res) => {
+    res.json({
+        message: "Welcome to fruitables."
+    })
+})
+
 app.use("/api/v1/", router);
 
 app.listen(process.env.PORT, () => {
