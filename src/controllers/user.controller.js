@@ -28,9 +28,11 @@ const userRegister = async (req, res) => {
             const user = await Users.create({ ...req.body, password: hashPass });
             const userData = await Users.findById(user?._id).select("-password");
 
-            // const otp = Math.floor(100000 + Math.random() * 900000);
+            const otp = Math.floor(100000 + Math.random() * 900000);  
+            
+            sendMail(email, 'Verify your account with Fruitables', `your verifiacation otp is ${otp}`);
 
-            sendOTP();
+            // sendOTP();
 
             const docDefinition = {
                 content: [
@@ -89,9 +91,7 @@ const userRegister = async (req, res) => {
                 },
             };
 
-            await createPDF(docDefinition, user.name);
-
-            // sendMail(email, 'Verify your account with Fruitables', `your verifiacation otp is ${otp}`);
+            await createPDF(docDefinition, user.name);            
 
             return res.status(201).json({
                 success: true,
