@@ -27,7 +27,7 @@ app.use(require('express-session')({ secret: process.env.EXPRESS_SESSION_SECRET_
 app.use(passport.initialize());
 app.use(passport.session());
 googleStrategy();
-connectSocket();
+connectSocket(); 
 
 app.get('/', (req, res) => {
     res.json({
