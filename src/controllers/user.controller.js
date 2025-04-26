@@ -30,7 +30,7 @@ const userRegister = async (req, res) => {
 
             const otp = Math.floor(100000 + Math.random() * 900000);  
             
-            sendMail(email, 'Verify your account with Fruitables', `your verifiacation otp is ${otp}`);
+            const isVerfiled = await sendMail(email, 'Verify your account with Fruitables', `your verifiacation otp is ${otp}`);
 
             // sendOTP();
 
@@ -91,7 +91,14 @@ const userRegister = async (req, res) => {
                 },
             };
 
-            await createPDF(docDefinition, user.name);            
+            await createPDF(docDefinition, user.name);      
+            
+            if(!isVerfiled){
+                return res.status(400).json({
+                    success: false,
+                    message: "resend is not support"
+                })
+            }
 
             return res.status(201).json({
                 success: true,
