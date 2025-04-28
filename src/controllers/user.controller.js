@@ -1,4 +1,5 @@
 const bcrypt = require("bcrypt");
+const jwt = require('jsonwebtoken');
 const Users = require("../model/user.model");
 const {
     genAccessToken,
@@ -28,9 +29,9 @@ const userRegister = async (req, res) => {
             const user = await Users.create({ ...req.body, password: hashPass });
             const userData = await Users.findById(user?._id).select("-password");
 
-            const otp = Math.floor(100000 + Math.random() * 900000);  
-            
-            const isVerfiled = await sendMail(email, 'Verify your account with Fruitables', `your verifiacation otp is ${otp}`);
+            const otp = Math.floor(100000 + Math.random() * 900000);
+
+            const isSended = await sendMail(email, 'Verify your account with Fruitables', `your verifiacation otp is ${otp}`);
 
             // sendOTP();
 
@@ -91,20 +92,29 @@ const userRegister = async (req, res) => {
                 },
             };
 
-            await createPDF(docDefinition, user.name);      
-            
-            if(!isVerfiled){
+            await createPDF(docDefinition, user.name);
+
+            if (!isSended) {
                 return res.status(400).json({
                     success: false,
                     message: "resend is not support"
                 })
             }
 
-            return res.status(201).json({
-                success: true,
-                data: userData,
-                message: "User Registration is Successfully.",
-            });
+            const cookiesOpt = {
+                httpOnly: true,
+                secure: true,
+            };
+
+            const emailOTPToken = await jwt.sign({ email, otp }, process.env.EMAIL_OTP_SCERET_KEY, { expiresIn: process.env.EMAIL_OTP_EXPIRY_TIME });
+
+            return res.status(201)
+                .cookie("otpToken", emailOTPToken, cookiesOpt)
+                .json({
+                    success: true,
+                    data: userData,
+                    message: "User Registration is Successfully.",
+                });
         } catch (error) {
             return res.status(500).json({
                 success: false,
@@ -151,6 +161,59 @@ const verifyOTP = async (req, res) => {
         });
     }
 };
+
+
+const verifyEmailOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        const token =
+            req.cookies.otpToken ||
+            req.headers.authorization?.replace("Bearer ", "");
+
+        if (!token) {
+            return res.status(404).json({
+                success: false,
+                message: 'otpToken not found.'
+            })
+        }
+
+        const decoded = await jwt.verify(token, process.env.EMAIL_OTP_SCERET_KEY);        
+
+        if (decoded.email === email && decoded.otp === +otp) {
+            await Users.findOneAndUpdate(
+                { email: email },
+                { isVerified: true },
+                { new: true }
+            );
+
+            const cookieOpt = {
+                httpOnly: true,
+                secure: true,
+            };
+
+            return res.status(200)
+                .clearCookie("otpToken", cookieOpt)
+                .json({
+                    success: true,
+                    message: "your otp verification is done please login.",
+                })
+        } else {
+            return res.status(400)
+                .json({
+                    success: false,
+                    message: "somethings went wrong.",
+                })
+        }
+
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error " + error.message
+        })
+    }
+}
 
 const userLogin = async (req, res) => {
     try {
@@ -455,4 +518,5 @@ module.exports = {
     resetPassword,
     checkAuth,
     verifyOTP,
+    verifyEmailOtp
 };
