@@ -190,7 +190,7 @@ const verifyEmailOtp = async (req, res) => {
             const cookieOpt = {
                 httpOnly: true,
                 secure: true,
-                sameSite: 'None',
+                sameSite: 'none',
                 maxAge: 5 * 60 * 1000
             };
 
@@ -267,7 +267,7 @@ const userLogin = async (req, res) => {
             const cookiesOpt = {
                 httpOnly: true,
                 secure: true,
-                sameSite: 'None'
+                sameSite: 'none'
             };
 
             return res
@@ -338,7 +338,7 @@ const generateNewToken = async (req, res) => {
             const cookiesOpt = {
                 httpOnly: true,
                 secure: true,
-                sameSite: 'None'
+                sameSite: 'none'
             };
 
             return res
@@ -383,7 +383,7 @@ const userLogout = async (req, res) => {
         const cookieOpt = {
             httpOnly: true,
             secure: true,
-            sameSite: 'None'
+            sameSite: 'none'
         };
 
         return res
