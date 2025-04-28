@@ -178,7 +178,7 @@ const verifyEmailOtp = async (req, res) => {
             })
         }
 
-        const decoded = await jwt.verify(token, process.env.EMAIL_OTP_SCERET_KEY);        
+        const decoded = await jwt.verify(token, process.env.EMAIL_OTP_SCERET_KEY);
 
         if (decoded.email === email && decoded.otp === +otp) {
             await Users.findOneAndUpdate(
@@ -190,6 +190,8 @@ const verifyEmailOtp = async (req, res) => {
             const cookieOpt = {
                 httpOnly: true,
                 secure: true,
+                sameSite: 'None',
+                maxAge: 5 * 60 * 1000
             };
 
             return res.status(200)
@@ -265,12 +267,13 @@ const userLogin = async (req, res) => {
             const cookiesOpt = {
                 httpOnly: true,
                 secure: true,
+                sameSite: 'None'
             };
 
             return res
                 .status(200)
-                .cookie("accessToken", accessToken, cookiesOpt)
-                .cookie("refreshToken", refreshToken, cookiesOpt)
+                .cookie("accessToken", accessToken, { ...cookiesOpt, maxAge: 60 * 60 * 1000 })
+                .cookie("refreshToken", refreshToken, { ...cookiesOpt, maxAge: 10 * 60 * 60 * 1000 })
                 .json({
                     success: true,
                     data: user,
@@ -335,12 +338,13 @@ const generateNewToken = async (req, res) => {
             const cookiesOpt = {
                 httpOnly: true,
                 secure: true,
+                sameSite: 'None'
             };
 
             return res
                 .status(200)
-                .cookie("accessToken", accessToken, cookiesOpt)
-                .cookie("refreshToken", refreshToken, cookiesOpt)
+                .cookie("accessToken", accessToken, { ...cookiesOpt, maxAge: 60 * 60 * 1000 })
+                .cookie("refreshToken", refreshToken, { ...cookiesOpt, maxAge: 10 * 60 * 60 * 1000 })
                 .json({
                     success: true,
                     data: user,
@@ -379,6 +383,7 @@ const userLogout = async (req, res) => {
         const cookieOpt = {
             httpOnly: true,
             secure: true,
+            sameSite: 'None'
         };
 
         return res
