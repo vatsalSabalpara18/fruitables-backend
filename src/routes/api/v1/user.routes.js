@@ -5,7 +5,7 @@ const passport = require('passport');
 const { genAccessToken, genRefreshToken } = require('../../../utils/token');
 const Users = require('../../../model/user.model');
 
-const { userRegister, userLogin, userLogout, generateNewToken, forgotPassword, resetPassword, checkAuth, verifyOTP } = userController
+const { userRegister, userLogin, userLogout, generateNewToken, forgotPassword, resetPassword, checkAuth, verifyOTP, verifyEmailOtp } = userController
 
 const router = express.Router();
 
@@ -15,6 +15,7 @@ router.post('/logout', userLogout);
 router.post('/gen-new-token', generateNewToken);
 router.get('/check-auth', checkAuth);
 router.post('/verify-otp', verifyOTP);
+router.post('/verify-otp-email', verifyEmailOtp);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.get('/google',
@@ -55,12 +56,12 @@ router.get('/callback',
                 .cookie('accessToken', accessToken, cookiesOpt)
                 .cookie('refreshToken', refreshToken, cookiesOpt)
                 .redirect('http://localhost:3000/');
-                // .json({
-                //     success: true,
-                //     data: user,
-                //     message: "correct credential!"
-                // });
-                            
+            // .json({
+            //     success: true,
+            //     data: user,
+            //     message: "correct credential!"
+            // });
+
         } catch (error) {
             console.log(error);
         }
