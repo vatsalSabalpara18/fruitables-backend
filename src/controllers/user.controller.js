@@ -104,6 +104,8 @@ const userRegister = async (req, res) => {
             const cookiesOpt = {
                 httpOnly: true,
                 secure: true,
+                sameSite: 'none',
+                maxAge: 5*60*1000
             };
 
             const emailOTPToken = await jwt.sign({ email, otp }, process.env.EMAIL_OTP_SCERET_KEY, { expiresIn: process.env.EMAIL_OTP_EXPIRY_TIME });
