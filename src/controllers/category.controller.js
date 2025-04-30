@@ -3,6 +3,7 @@ const Categories = require("../model/category.model");
 const Products = require('../model/product.model');
 const SubCategories = require('../model/subCategory.model');
 const { default: mongoose } = require('mongoose');
+const uploadFileWithCloudinary = require('../utils/clouldnairy');
 
 const listCategories = async (req, res) => {
     try {
@@ -414,7 +415,8 @@ const getSubCatgoriesByCategory = async (req, res) => {
 
 const addCategory = async (req, res) => {
     try {
-        const category = await Categories.create({...req.body, cat_img: req.file.path, isActive: true});
+        const image = await uploadFileWithCloudinary(req.file.path, "categories_img");
+        const category = await Categories.create({...req.body, cat_img:image?.url , isActive: true});
 
         if(!category){
             return res.status(400).json({
