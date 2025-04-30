@@ -12,12 +12,13 @@ const storage = multer.diskStorage({
            return cb(new Error('Image files only allowed in jpg, jpeg and png formates.'))
         }
 
-        fs.mkdir(filePath, {recursive: true} ,(err) => {
-            if(err) {
-                console.log(err)
-            }
-        });
-        cb(null, filePath);
+        // fs.mkdir(filePath, {recursive: true} ,(err) => {
+        //     if(err) {
+        //         console.log(err)
+        //     }
+        // });
+        // cb(null, filePath);
+        cb(null, '/tmp');
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)        
