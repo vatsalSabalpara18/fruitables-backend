@@ -416,7 +416,7 @@ const getSubCatgoriesByCategory = async (req, res) => {
 const addCategory = async (req, res) => {
     try {
         const image = await uploadFileWithCloudinary(req.file.path, "categories_img");
-        const category = await Categories.create({ ...req.body, cat_img: {url: image?.url, public_id: image?.public_id}, isActive: true });
+        const category = await Categories.create({ ...req.body, cat_img: { url: image?.url, public_id: image?.public_id }, isActive: true });
 
         if (!category) {
             return res.status(400).json({
@@ -446,16 +446,20 @@ const updateCategory = async (req, res) => {
         let updatedBody;
         const getOldCategory = await Categories.findById(req.params.id);
         if (req.file) {
-            updatedBody = { ...req.body, cat_img: req.file.path };
-            fs.unlink(getOldCategory.cat_img.replaceAll("\\", "/"), (err) => {
-                if (err) {
-                    return res.status(400).json({
-                        success: false,
-                        data: null,
-                        message: "Error in delete old image during the update category: " + err
-                    })
-                }
-            })
+            const deleteRes = await deleteFileWithCloudinary(getOldCategory?.cat_img?.public_id);
+            if (deleteRes?.result == 'ok') {
+                const newImage = await uploadFileWithCloudinary(req.file.path, "categories_img");
+                updatedBody = { ...req.body, cat_img: { url: newImage?.url, public_id: newImage?.public_id } };
+            }
+            // fs.unlink(getOldCategory.cat_img.replaceAll("\\", "/"), (err) => {
+            //     if (err) {
+            //         return res.status(400).json({
+            //             success: false,
+            //             data: null,
+            //             message: "Error in delete old image during the update category: " + err
+            //         })
+            //     }
+            // })
         } else {
             updatedBody = { ...req.body }
         }
@@ -506,9 +510,9 @@ const deleteCategory = async (req, res) => {
         //     }
         // });        
 
-        if(deleteRes?.result !== 'ok'){
+        if (deleteRes?.result !== 'ok') {
             return res.status(400).json({
-                success:false,
+                success: false,
                 data: null,
                 message: "Error in delete category image"
             })
