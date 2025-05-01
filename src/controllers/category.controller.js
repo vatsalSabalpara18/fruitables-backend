@@ -3,7 +3,7 @@ const Categories = require("../model/category.model");
 const Products = require('../model/product.model');
 const SubCategories = require('../model/subCategory.model');
 const { default: mongoose } = require('mongoose');
-const uploadFileWithCloudinary = require('../utils/clouldnairy');
+const { uploadFileWithCloudinary, deleteFileWithCloudinary } = require('../utils/clouldnairy');
 
 const listCategories = async (req, res) => {
     try {
@@ -39,7 +39,7 @@ const getTotalCategory = async (req, res) => {
                 }
             ]
         )
-        if(!res) {
+        if (!res) {
             return res.status(400).json({
                 sucess: false,
                 data: [],
@@ -87,7 +87,7 @@ const getCategory = async (req, res) => {
 
 const getCountActive = async (req, res) => {
     try {
-        
+
         const result = await Categories.aggregate(
             [
                 {
@@ -101,12 +101,12 @@ const getCountActive = async (req, res) => {
             ]
         );
 
-        if(!result){
+        if (!result) {
             return res.status(400).json({
                 success: false,
                 data: [],
                 message: "result get empty."
-            }) 
+            })
         }
 
         res.status(200).json({
@@ -114,7 +114,7 @@ const getCountActive = async (req, res) => {
             data: result,
             message: "get result successfully."
         })
-        
+
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -233,7 +233,7 @@ const getAverageProducts = async (req, res) => {
         );
 
         const new_res = result.map((item) => {
-            const percentage =  +((item.No_of_products / total_product ) * 100).toFixed(2)
+            const percentage = +((item.No_of_products / total_product) * 100).toFixed(2)
             return {
                 ...item,
                 percentage
@@ -416,9 +416,9 @@ const getSubCatgoriesByCategory = async (req, res) => {
 const addCategory = async (req, res) => {
     try {
         const image = await uploadFileWithCloudinary(req.file.path, "categories_img");
-        const category = await Categories.create({...req.body, cat_img:image?.url , isActive: true});
+        const category = await Categories.create({ ...req.body, cat_img: {url: image?.url, public_id: image?.public_id}, isActive: true });
 
-        if(!category){
+        if (!category) {
             return res.status(400).json({
                 success: false,
                 data: [],
@@ -432,7 +432,7 @@ const addCategory = async (req, res) => {
             message: "new category is created successfully."
         })
 
-    } catch (error) {        
+    } catch (error) {
         res.status(500).json({
             success: false,
             data: null,
@@ -445,10 +445,10 @@ const updateCategory = async (req, res) => {
     try {
         let updatedBody;
         const getOldCategory = await Categories.findById(req.params.id);
-        if(req.file){
-            updatedBody = {...req.body, cat_img: req.file.path};
+        if (req.file) {
+            updatedBody = { ...req.body, cat_img: req.file.path };
             fs.unlink(getOldCategory.cat_img.replaceAll("\\", "/"), (err) => {
-                if(err){
+                if (err) {
                     return res.status(400).json({
                         success: false,
                         data: null,
@@ -457,7 +457,7 @@ const updateCategory = async (req, res) => {
                 }
             })
         } else {
-            updatedBody =  {...req.body}
+            updatedBody = { ...req.body }
         }
         const category = await Categories.findByIdAndUpdate(req.params.id, updatedBody, { new: true, runValidators: true });
 
@@ -492,17 +492,27 @@ const deleteCategory = async (req, res) => {
                 data: null,
                 message: "Error during the delete category."
             })
-        }        
+        }
 
-        fs.unlink(category.cat_img, (err) => {
-            if(err) {
-                return res.status(400).json({
-                    success: false,
-                    data: null,
-                    messsage: "Error in delete category image: " + err
-                })
-            }
-        });
+        const deleteRes = await deleteFileWithCloudinary(category.cat_img.public_id);
+
+        // fs.unlink(category.cat_img, (err) => {
+        //     if(err) {
+        //         return res.status(400).json({
+        //             success: false,
+        //             data: null,
+        //             messsage: "Error in delete category image: " + err
+        //         })
+        //     }
+        // });        
+
+        if(deleteRes?.result !== 'ok'){
+            return res.status(400).json({
+                success:false,
+                data: null,
+                message: "Error in delete category image"
+            })
+        }
 
         res.status(200).json({
             success: true,
