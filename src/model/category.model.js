@@ -12,8 +12,15 @@ const categorySchema = new Schema({
         required: true,
         trim: true
     },
+    // cat_img: {
+    //     type: String,
+    //     required: true
+    // },
     cat_img: {
-        type: String,
+        type: {
+            url: String,
+            public_id: String
+        },
         required: true
     },
     isActive: {
