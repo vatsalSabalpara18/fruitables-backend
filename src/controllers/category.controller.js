@@ -489,7 +489,7 @@ const updateCategory = async (req, res) => {
 
 const deleteCategory = async (req, res) => {
     try {
-        const category = await Categories.findOneAndDelete(req.params.id);
+        const category = await Categories.findByIdAndDelete(req.params.id);
         if (!category) {
             return res.status(400).json({
                 success: false,
