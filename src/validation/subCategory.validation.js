@@ -1,31 +1,33 @@
 const Joi = require("joi");
 
-const addCategory = {
+const addSubCategory = {
     body: Joi.object().keys({
         name: Joi.string().required().trim(),
-        description: Joi.string().required().trim()        
+        category: Joi.string().required().trim(),
+        description: Joi.string().required().trim()
     })
 }
 
-const updateCategory = {
+const updateSubCategory = {
     params: Joi.object().keys({
         id: Joi.string().required().trim()
     }),
     body: Joi.object().keys({
         name: Joi.string().required().trim(),
+        category: Joi.string().required().trim(),
         description: Joi.string().required().trim(),
-        cat_img: Joi.object()        
+        sub_cat_img: Joi.object()
     })
 }
 
-const getCategory = {
+const getSubCategory = {
     params: Joi.object().keys({
         id: Joi.string().required().trim()
     })
 }
 
 module.exports = {
-    addCategory,
-    updateCategory,
-    getCategory
+    addSubCategory,
+    updateSubCategory,
+    getSubCategory
 }

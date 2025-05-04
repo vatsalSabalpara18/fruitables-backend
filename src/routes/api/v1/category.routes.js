@@ -54,7 +54,7 @@ router.put(
   "/update-category/:id",
   auth(["admin", "user", "employee"]),
   upload.single("cat_img"),
-  // validations(CatgoryValidation.updateCategory),
+  validations(CatgoryValidation.updateCategory),
   updateCategory
 );
 

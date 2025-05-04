@@ -1,11 +1,12 @@
 const fs = require('fs');
 const SubCategories = require("../model/subCategory.model");
 const Products = require('../model/product.model');
+const { uploadFileWithCloudinary, deleteFileWithCloudinary } = require('../utils/clouldnairy');
 
 const listCategories = async (req, res) => {
     try {
         const list_categories = await SubCategories.find({});
-        if(!list_categories){
+        if (!list_categories) {
             return res.status(400).json({
                 success: false,
                 data: null,
@@ -18,12 +19,12 @@ const listCategories = async (req, res) => {
             data: list_categories,
             message: "subcategoires list get"
         })
-        
+
     } catch (error) {
         return res.status(500).json({
             success: false,
             data: null,
-            message: "internal server error: "+ error.message
+            message: "internal server error: " + error.message
         })
     }
 }
@@ -56,7 +57,7 @@ const listCategoryName = async (req, res) => {
                 }
             ]
         )
-        if (!result){
+        if (!result) {
             return res.status(400).json({
                 success: false,
                 data: [],
@@ -80,7 +81,7 @@ const listCategoryName = async (req, res) => {
 const getSubcategories = async (req, res) => {
     try {
         const subCategories = await SubCategories.find({ category: req.params.cat_Id }).exec();
-        if(!subCategories){
+        if (!subCategories) {
             return res.status(400).json({
                 success: false,
                 data: null,
@@ -97,7 +98,7 @@ const getSubcategories = async (req, res) => {
         return res.status(500).json({
             success: false,
             data: null,
-            message: "Internal server Error: "+ error.message
+            message: "Internal server Error: " + error.message
         })
     }
 }
@@ -116,7 +117,7 @@ const getCountActiveSubCategories = async (req, res) => {
                 }
             ]
         )
-        if(!result){
+        if (!result) {
             return res.status(400).json({
                 success: false,
                 data: [],
@@ -133,7 +134,7 @@ const getCountActiveSubCategories = async (req, res) => {
             success: false,
             data: null,
             message: "Internal server Error: " + error.message
-        }) 
+        })
     }
 }
 
@@ -267,13 +268,13 @@ const getSubCategoryWithMostProducts = async (req, res) => {
                 }
             ]
         )
-        const max_no_of_products = result.reduce((acc, item) => {            
-            if (item?.no_of_products > acc){
-                acc = item?.no_of_products                
+        const max_no_of_products = result.reduce((acc, item) => {
+            if (item?.no_of_products > acc) {
+                acc = item?.no_of_products
             }
             return acc;
         }, 0)
-        
+
         if (!result) {
             return res.status(400).json({
                 success: false,
@@ -296,10 +297,11 @@ const getSubCategoryWithMostProducts = async (req, res) => {
 }
 
 const addSubcategory = async (req, res) => {
-    try {        
-        const subCategory = await SubCategories.create({...req.body, sub_cat_img: req.file.path});
+    try {
+        const image = await uploadFileWithCloudinary(req.file.path, "sub_categories_img");
+        const subCategory = await SubCategories.create({ ...req.body, sub_cat_img: { url: image.url, public_id: image.public_id } });
 
-            if(!subCategory){
+        if (!subCategory) {
             return res.status(400).json({
                 success: false,
                 data: [],
@@ -326,27 +328,31 @@ const addSubcategory = async (req, res) => {
 const updateSubcategory = async (req, res) => {
     try {
         let updateBody;
-        if(req.file){
+        if (req.file) {
             const oldSubCategory = await SubCategories.findById(req.params.id);
+            const deleteRes = await deleteFileWithCloudinary(oldSubCategory?.sub_cat_img?.public_id);
+            // fs.unlinkSync(oldSubCategory.sub_cat_img, (err) => {
+            //     if(err){
+            //         return res.status(400).json({
+            //             success: false,
+            //             data: null,
+            //             message: "Error in delete old subcategory image."                        
+            //         })
+            //     }
+            // })
 
-            fs.unlinkSync(oldSubCategory.sub_cat_img, (err) => {
-                if(err){
-                    return res.status(400).json({
-                        success: false,
-                        data: null,
-                        message: "Error in delete old subcategory image."                        
-                    })
-                }
-            })
+            if (deleteRes.result == 'ok') {
+                const newImage = await uploadFileWithCloudinary(req.file.path, "sub_categories_img");
+                updateBody = { ...req.body, sub_cat_img: { url: newImage?.url, public_id: newImage?.public_id } };
+            }
 
-            updateBody = { ...req.body, sub_cat_img: req.file.path };
         } else {
             updateBody = { ...req.body };
         }
 
         const subCategory = await SubCategories.findByIdAndUpdate(req.params.id, updateBody, { new: true, runValidators: true });
 
-        if(!subCategory){
+        if (!subCategory) {
             return res.status(400).json({
                 success: false,
                 data: null,
@@ -372,7 +378,7 @@ const updateSubcategory = async (req, res) => {
 const deleteSubcategory = async (req, res) => {
     try {
         const subCategory = await SubCategories.findByIdAndDelete(req.params.id);
-        if(!subCategory){
+        if (!subCategory) {
             return res.status(400).json({
                 success: false,
                 data: null,
@@ -380,15 +386,25 @@ const deleteSubcategory = async (req, res) => {
             })
         }
 
-        fs.unlinkSync(subCategory.sub_cat_img, (err) => {
-            if(err){
-                return res.status(400).json({
-                    success: false,
-                    data: null,
-                    message: "Error in delete the image file."
-                })
-            }
-        })
+        const deleteRes = await deleteFileWithCloudinary(subCategory?.sub_cat_img?.public_id);
+
+        // fs.unlinkSync(subCategory.sub_cat_img, (err) => {
+        //     if(err){
+        //         return res.status(400).json({
+        //             success: false,
+        //             data: null,
+        //             message: "Error in delete the image file."
+        //         })
+        //     }
+        // })
+
+        if (deleteRes.result !== 'ok') {
+            return res.status(400).json({
+                success: false,
+                data: null,
+                message: "Error in delete the image file."
+            })
+        }
 
         return res.status(200).json({
             success: true,
@@ -400,7 +416,7 @@ const deleteSubcategory = async (req, res) => {
         return res.status(500).json({
             success: false,
             data: null,
-            message: "Internal server error: "+ error.message
+            message: "Internal server error: " + error.message
         })
     }
 }

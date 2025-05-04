@@ -2,6 +2,9 @@ const express = require("express");
 
 const { subCategoryController } = require("../../../controllers");
 const upload = require("../../../middleware/upload");
+const { SubCategoryValidation } = require("../../../validation");
+const validations = require("../../../middleware/validations");
+const auth = require("../../../middleware/auth");
 
 const router = express.Router();
 const {
@@ -31,10 +34,27 @@ router.get("/most-products", getSubCategoryWithMostProducts);
 
 router.get("/inactive", listInActiveSubCategories);
 
-router.post("/add-subcategory", upload.single("sub_cat_img"), addSubcategory);
+router.post(
+  "/add-subcategory",
+  auth(["admin", "user", "employee"]),
+  upload.single("sub_cat_img"),
+  validations(SubCategoryValidation.addSubCategory),
+  addSubcategory
+);
 
-router.put("/update-subcategory/:id", upload.single('sub_cat_img') , updateSubcategory)
+router.put(
+  "/update-subcategory/:id",
+  auth(["admin", "user", "employee"]),
+  upload.single('sub_cat_img'),
+  validations(SubCategoryValidation.updateSubCategory),
+  updateSubcategory
+)
 
-router.delete("/delete-subcategory/:id", deleteSubcategory);
+router.delete(
+  "/delete-subcategory/:id",
+  auth(["admin", "user", "employee"]),
+  validations(SubCategoryValidation.getSubCategory),
+  deleteSubcategory
+);
 
 module.exports = router;
