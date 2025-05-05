@@ -1,6 +1,7 @@
 const fs = require('fs');
 const Products = require("../model/product.model");
 const mongoose = require('mongoose');
+const { uploadFileWithCloudinary, deleteFileWithCloudinary } = require('../utils/clouldnairy');
 
 const listProducts = async (req, res) => {
     try {
@@ -168,7 +169,7 @@ const getProduct = async (req, res) => {
 }
 
 const getProdcutsByName = async (req, res) => {
-    try {        
+    try {
         const { name } = req.params;
 
         const result = await Products.find({ name: { $regex: new RegExp(name, "i") } });
@@ -196,25 +197,25 @@ const getProdcutsByName = async (req, res) => {
 }
 
 const getProductBySearch = async (req, res) => {
-    try {        
+    try {
         const matchObj = {};
-        const {category, max, min, rating, sortOrder, page, limit} = req.query
-        if(category){
+        const { category, max, min, rating, sortOrder, page, limit } = req.query
+        if (category) {
             matchObj["category_id"] = parseInt(category);
         }
-        if(max || min) {
+        if (max || min) {
             matchObj["variants.price"] = {}
-        }        
-        if(max){
+        }
+        if (max) {
             matchObj["variants.price"]["$lte"] = parseFloat(max)
         }
-        if(min){
+        if (min) {
             matchObj["variants.price"]["$gte"] = parseFloat(min)
         }
-        if(rating){
+        if (rating) {
             matchObj["avgProductRating"] = { $gte: parseFloat(rating) }
-        }        
-                
+        }
+
         // {
         //     category_id: 1,
         //         avgProductRating: { $gt: 4 },
@@ -269,7 +270,7 @@ const getProductBySearch = async (req, res) => {
                 }
             }
         ];
-        if(page && limit){
+        if (page && limit) {
             pipeline.push({
                 "$skip": (parseInt(page) - 1) * parseInt(limit)
             })
@@ -280,14 +281,14 @@ const getProductBySearch = async (req, res) => {
         const result = await Products.aggregate(
             pipeline
         )
-        if (!result || !result.length){
-           return res.status(400).json({
+        if (!result || !result.length) {
+            return res.status(400).json({
                 success: false,
                 data: [],
                 message: "result is get empty."
             })
         }
-       return res.status(200).json({
+        return res.status(200).json({
             success: true,
             data: result,
             message: "result get successfully."
@@ -305,7 +306,7 @@ const listProductsByCategory = async (req, res) => {
     try {
         const { category_id } = req.params;
 
-        const result = await Products.find({ category: category_id});
+        const result = await Products.find({ category: category_id });
 
         if (!result) {
             return res.status(400).json({
@@ -382,7 +383,7 @@ const getVariantDetails = async (req, res) => {
             ]
         )
 
-        if(!result){
+        if (!result) {
             return res.status(400).json({
                 success: true,
                 data: result,
@@ -407,7 +408,8 @@ const getVariantDetails = async (req, res) => {
 
 const addProduct = async (req, res) => {
     try {
-        const product = await Products.create({ ...req.body, product_img: req.file.path });
+        const image = await uploadFileWithCloudinary(req.file.path, "product_img")
+        const product = await Products.create({ ...req.body, product_img: { url: image?.url, public_id: image?.public_id } });
 
         if (!product) {
             return res.status(400).json({
@@ -436,19 +438,23 @@ const updateProduct = async (req, res) => {
         if (req.file) {
             const oldProduct = await Products.findById(req.params.id);
 
-            if (oldProduct?.product_img) {
-                fs.unlinkSync(oldProduct?.product_img, (err) => {
-                    if (err) {
-                        return res.status(400).json({
-                            success: false,
-                            data: null,
-                            message: "Error during the delete old product image."
-                        })
-                    }
-                })
+            if (oldProduct?.product_img?.public_id) {
+                const deleteImg = await deleteFileWithCloudinary(oldProduct?.product_img?.public_id);
+                if (deleteImg?.result == 'ok') {
+                    const newImage = await uploadFileWithCloudinary(req.file.path, "product_img")
+                    modifiedBody = { ...req.body, product_img: { url: newImage?.url, public_id: newImage?.public_id } };
+                }
+                // fs.unlinkSync(oldProduct?.product_img, (err) => {
+                //     if (err) {
+                //         return res.status(400).json({
+                //             success: false,
+                //             data: null,
+                //             message: "Error during the delete old product image."
+                //         })
+                //     }
+                // })
             }
 
-            modifiedBody = { ...req.body, product_img: req.file.path };
         } else {
             modifiedBody = { ...req.body }
         }
@@ -486,16 +492,25 @@ const deleteProduct = async (req, res) => {
             })
         }
 
+        const deleteRes = await deleteFileWithCloudinary(product?.product_img?.public_id);
 
-        fs.unlinkSync(product.product_img, (err) => {
-            if (err) {
-                return res.status(400).json({
-                    success: false,
-                    data: null,
-                    message: "Error during the delete product image."
-                })
-            }
-        })
+        if (deleteRes?.result !== 'ok') {
+            return res.status(400).json({
+                success: false,
+                data: null,
+                message: "Error during the delete product image."
+            })
+        }
+
+        // fs.unlinkSync(product.product_img, (err) => {
+        //     if (err) {
+        //         return res.status(400).json({
+        //             success: false,
+        //             data: null,
+        //             message: "Error during the delete product image."
+        //         })
+        //     }
+        // })
 
         return res.status(200).json({
             success: true,

@@ -27,11 +27,15 @@ const productSchema = new Schema({
         required: true,        
     },
     product_img: {
-        type: String,
+        type: {
+            url: String,
+            public_id: String
+        },
         required: true
     },
     isActive: {
         type: Boolean,
+        default: true,
         required: true
     }
 }, {
