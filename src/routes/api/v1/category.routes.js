@@ -5,6 +5,7 @@ const upload = require("../../../middleware/upload");
 const auth = require("../../../middleware/auth");
 const validations = require("../../../middleware/validations");
 const { CatgoryValidation } = require("../../../validation");
+const FileErrorHandling = require("../../../middleware/FileErrorHandling");
 
 const router = express.Router();
 const {
@@ -45,7 +46,7 @@ router.get("/category-subcategory/:category_id", getSubCatgoriesByCategory);
 router.post(
   "/add-category",
   auth(["admin", "user", "employee"]),
-  upload.single("cat_img"),
+  FileErrorHandling("cat_img"),
   validations(CatgoryValidation.addCategory),
   addCategory
 );
