@@ -15,7 +15,7 @@ const listCategories = async (req, res) => {
         }
 
         return res.status(200).json({
-            message: true,
+            success: true,
             data: list_categories,
             message: "subcategoires list get"
         })
